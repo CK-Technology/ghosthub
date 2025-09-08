@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: ghosthub
+      POSTGRES_USER: ghosthub
+      POSTGRES_PASSWORD: ghosthub
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  app:
+    build: .
+    ports:
+      - "80:80"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: "postgresql://ghosthub:ghosthub@db:5432/ghosthub"
+      SERVER_ADDR: "127.0.0.1:8080"
+      JWT_SECRET: "your-super-secret-jwt-key-change-in-production"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

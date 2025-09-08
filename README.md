@@ -1,110 +1,134 @@
 # GhostHub
 
-<div align="center">
-  <img src="assets/icons/ghosthub-icon.png" alt="GhostHub Icon" width="128" height="128">
-
-**Self-Hosted IT Operations Platform — Documentation, Ticketing, and Reporting in One**
+**Self-Hosted MSP Management Platform - Built with Rust + WebAssembly**
 
 ![rust](https://img.shields.io/badge/Backend-Rust-orange?logo=rust)
-![typescript](https://img.shields.io/badge/Frontend-TypeScript-blue?logo=typescript)
-![svelte](https://img.shields.io/badge/UI-SvelteKit-ff3e00?logo=svelte)
+![wasm](https://img.shields.io/badge/Frontend-WebAssembly-654ff0?logo=webassembly)
+![yew](https://img.shields.io/badge/UI-Yew-green)
 ![postgres](https://img.shields.io/badge/Database-PostgreSQL-336791?logo=postgresql)
-![oidc](https://img.shields.io/badge/Auth-OIDC%20%2F%20SSO-brightgreen)
-![docker](https://img.shields.io/badge/Deploy-Docker%20%7C%20K8s-2496ED?logo=docker)
-
-</div>
+![docker](https://img.shields.io/badge/Deploy-Docker-2496ED?logo=docker)
 
 ---
 
 ## Overview
 
-**GhostHub** is a self-hosted IT operations platform combining:
+**GhostHub** is a modern, self-hostable MSP (Managed Service Provider) management platform built with Rust and WebAssembly. Inspired by ITFlow but designed from the ground up for performance, security, and ease of deployment.
 
-* **Hudu-style documentation**
-* **Modern ticketing** inspired by BMS/HaloPSA
-* **Reporting & asset management**
-* **Developer-friendly API**
+### Key Features
 
-Designed for MSPs, internal IT teams, and DevOps groups that want control over their tooling without SaaS lock-in.
-
----
-
-## ✨ Features
-
-* **Documentation (Hudu-style)**
-
-  * Nested docs, templates, and secrets fields
-  * Revision history and attachments
-  * Full-text search (Meilisearch)
-* **Ticketing & Reporting**
-
-  * Modern UI with drag-and-drop workflow changes
-  * SLA tracking, custom statuses, priorities
-  * Interactive dashboards and scheduled reports
-* **Asset Management**
-
-  * Clients, sites, devices, and relationships
-  * Sync devices from GhostLink agents
-* **Integrations**
-
-  * CrowdSec / Wazuh event ingestion
-  * Webhooks, REST API, and CLI
-* **Auth & Security**
-
-  * OIDC/SSO with Entra, GitHub, Google, Okta
-  * Role-based access control (RBAC)
+- **Client Management** - Organize your clients with contacts, locations, and detailed information
+- **Asset Tracking** - Track devices, servers, and infrastructure for each client  
+- **Ticketing System** - Support ticket management with time tracking and billing
+- **Invoicing & Billing** - Generate invoices, track payments, and manage finances
+- **Self-Hosted** - Complete control over your data
+- **Modern Architecture** - Built with Rust backend and WebAssembly frontend
+- **Docker Ready** - Easy deployment with Docker and docker-compose
 
 ---
 
-## 📦 Tech Stack
+## Quick Start
 
-* **Backend:** Rust (`axum`, `tokio`, `sqlx`)
-* **Frontend:** SvelteKit + TailwindCSS
-* **Database:** PostgreSQL + Redis (cache & queues)
-* **Search:** Meilisearch for instant KB/ticket search
-* **Deploy:** Docker Compose or Helm chart for Kubernetes
+### Using Docker (Recommended)
 
----
-
-## 🚀 Quick Start (Planned)
-
+1. Clone the repository:
 ```bash
-# Clone GhostHub
-git clone https://github.com/resolve-technology/ghosthub
+git clone https://github.com/yourusername/ghosthub.git
 cd ghosthub
-
-# Start with Docker Compose
-docker compose up -d
 ```
 
-**Example Config (`.env`)**
-
-```env
-POSTGRES_URL=postgres://ghosthub:password@db/ghosthub
-REDIS_URL=redis://cache
-MEILISEARCH_URL=http://search:7700
-OIDC_PROVIDER_URL=https://login.microsoftonline.com/<tenant>/v2.0
-OIDC_CLIENT_ID=<client-id>
-OIDC_CLIENT_SECRET=<client-secret>
+2. Start with docker-compose:
+```bash
+docker-compose up -d
 ```
+
+3. Access GhostHub at `http://localhost`
 
 ---
 
-## 🗺 Roadmap
+## Architecture
 
-* [ ] MVP: KB, ticketing, client/site/device assets
-* [ ] API & CLI tools
-* [ ] Integrations: GhostLink, Ghostwarden, CrowdSec, Wazuh
-* [ ] Reporting engine
-* [ ] Role-based dashboards
+- **Backend**: Axum web framework with SQLx for PostgreSQL
+- **Frontend**: Yew framework compiled to WebAssembly
+- **Database**: PostgreSQL with proper foreign keys and indexes
+- **Deployment**: Single Docker container behind nginx
 
----
+### Manual Development Setup
 
-## 🌐 Integrations
+#### Prerequisites
+- Rust 1.75+
+- PostgreSQL 13+
+- Node.js 18+ 
+- Trunk (for building frontend)
 
-GhostHub is designed to be the **central hub** for:
+#### Backend Setup
+1. Install dependencies:
+```bash
+cd backend
+cp .env.example .env
+# Edit .env with your database settings
+```
 
-* **GhostLink** → device info & remote actions
-* **Ghostwarden** → security alerts & enforcement logs
-* **CrowdSec/Wazuh** → create tickets or update assets automatically
+2. Setup database:
+```bash
+# Create database and run migrations
+cargo run
+```
+
+3. Start backend:
+```bash
+cargo run
+```
+
+#### Frontend Setup
+1. Install trunk:
+```bash
+cargo install trunk
+```
+
+2. Build and serve frontend:
+```bash
+cd frontend
+trunk serve
+```
+
+## Database
+
+GhostHub uses PostgreSQL and includes the following core tables:
+- `clients` - MSP customer organizations
+- `contacts` - Client contact persons
+- `assets` - Client devices and infrastructure  
+- `tickets` - Support requests and issues
+- `invoices` - Billing and financial records
+
+## API
+
+RESTful API with endpoints for:
+- `/api/v1/clients` - Client management
+- `/api/v1/tickets` - Ticket management
+- `/api/v1/assets` - Asset tracking
+- `/api/v1/invoices` - Billing management
+
+## Security
+
+- JWT-based authentication
+- Password hashing with bcrypt
+- SQL injection protection with SQLx
+- CORS and security headers configured
+- Input validation and sanitization
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests: `cargo test`
+5. Submit a pull request
+
+## License
+
+GPL-3.0 License - see LICENSE file for details.
+
+## Acknowledgments
+
+Inspired by the excellent ITFlow project. GhostHub aims to provide a modern, performant alternative built with Rust and WebAssembly.
 
