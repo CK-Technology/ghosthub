@@ -21,6 +21,14 @@ pub enum Route {
     Invoices,
     #[at("/projects")]
     Projects,
+    #[at("/m365")]
+    M365,
+    #[at("/azure")]
+    Azure,
+    #[at("/bitwarden")]
+    Bitwarden,
+    #[at("/network")]
+    Network,
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -125,6 +133,47 @@ pub fn layout(props: &LayoutProps) -> Html {
                                     {"Invoices"}
                                 </div>
                             </Link<Route>>
+                            
+                            // Integrations section
+                            <div class="mt-6 pt-6 border-t border-gray-700">
+                                <h3 class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">{"Integrations"}</h3>
+                                
+                                <Link<Route> to={Route::M365} classes={is_active(&Route::M365)}>
+                                    <div class="flex items-center">
+                                        <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z"/>
+                                        </svg>
+                                        {"Microsoft 365"}
+                                    </div>
+                                </Link<Route>>
+                                
+                                <Link<Route> to={Route::Azure} classes={is_active(&Route::Azure)}>
+                                    <div class="flex items-center">
+                                        <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 01-2 2H2l4 4v3a1 1 0 11-2 0v-3a1 1 0 01.293-.707L2 9.586V5z" clip-rule="evenodd"/>
+                                        </svg>
+                                        {"Azure"}
+                                    </div>
+                                </Link<Route>>
+                                
+                                <Link<Route> to={Route::Bitwarden} classes={is_active(&Route::Bitwarden)}>
+                                    <div class="flex items-center">
+                                        <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+                                        </svg>
+                                        {"Bitwarden"}
+                                    </div>
+                                </Link<Route>>
+                                
+                                <Link<Route> to={Route::Network} classes={is_active(&Route::Network)}>
+                                    <div class="flex items-center">
+                                        <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M13 7H7v6h6V7zM2 5v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4a2 2 0 00-2 2z"/>
+                                        </svg>
+                                        {"Network"}
+                                    </div>
+                                </Link<Route>>
+                            </div>
                         </div>
                         
                         // Time tracker in sidebar

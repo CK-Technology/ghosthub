@@ -25,3 +25,6 @@ gloo = "0.11"
 gloo-timers = "0.3"
 rust_decimal = { workspace = true }
 ghosthub-shared = { path = "../shared" }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"

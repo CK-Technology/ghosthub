@@ -21,6 +21,9 @@ mod files;
 mod notifications;
 mod integrations;
 
+#[cfg(test)]
+mod tests;
+
 pub struct AppState {
     pub db_pool: sqlx::PgPool,
     pub ws_manager: websocket::WsManager,
@@ -65,6 +68,15 @@ async fn main() -> anyhow::Result<()> {
         .nest("/api/v1/notifications", notifications::notification_routes())
         .nest("/api/v1/integrations", integrations::integration_routes())
         .nest("/api/v1/users", handlers::user_routes())
+        .nest("/api/v1/asset-layouts", handlers::asset_layout_routes())
+        .nest("/api/v1/asset-relationships", handlers::asset_relationship_routes())
+        .nest("/api/v1/sla", handlers::sla_routes())
+        .nest("/api/v1/passwords", handlers::password_routes())
+        .nest("/api/v1/network", handlers::network_topology_routes())
+        .nest("/api/v1/forticloud", handlers::forticloud_routes())
+        .nest("/api/v1/licenses", handlers::license_alert_routes())
+        .nest("/api/v1/documentation", handlers::documentation_routes())
+        .nest("/api/v1/reporting", handlers::reporting_routes())
         .route("/ws", get(websocket::websocket_handler))
         .layer(ServiceBuilder::new().layer(cors))
         .with_state(app_state);

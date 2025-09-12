@@ -1,0 +1,71 @@
+# Git and version control
+.git
+.gitignore
+.github/
+
+# Documentation
+*.md
+docs/
+
+# Development files
+.env
+.env.local
+.env.example
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Rust development files
+target/
+Cargo.lock
+**/*.rs.bk
+
+# Node modules (if any)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Logs
+logs/
+*.log
+
+# Test files and coverage
+coverage/
+*.profraw
+
+# Build artifacts
+dist/
+build/
+
+# Docker files (avoid recursion)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Backup files
+*.backup
+*.bak
+backups/
+
+# Local data
+data/
+volumes/
+
+# Scripts that shouldn't be in container
+scripts/test.sh
+scripts/dev.sh

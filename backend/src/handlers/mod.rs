@@ -15,6 +15,14 @@ pub mod projects;
 pub mod knowledge_base;
 pub mod portal;
 pub mod passwords;
+pub mod asset_layouts;
+pub mod asset_relationships;
+pub mod sla_management;
+pub mod network_topology;
+pub mod forticloud;
+pub mod license_alerts;
+pub mod documentation;
+pub mod reporting;
 
 pub use clients::client_routes;
 pub use tickets::ticket_routes;
@@ -25,6 +33,14 @@ pub use projects::project_routes;
 pub use knowledge_base::knowledge_base_routes;
 pub use portal::portal_routes;
 pub use passwords::password_routes;
+pub use asset_layouts::asset_layout_routes;
+pub use asset_relationships::asset_relationship_routes;
+pub use sla_management::sla_routes;
+pub use network_topology::network_topology_routes;
+pub use forticloud::forticloud_routes;
+pub use license_alerts::license_alert_routes;
+pub use documentation::documentation_routes;
+pub use reporting::reporting_routes;
 
 // Add user routes function
 pub fn user_routes() -> axum::Router<std::sync::Arc<crate::AppState>> {

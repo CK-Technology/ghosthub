@@ -1,0 +1,48 @@
+# Final GhostHub Demo - Network Issue Workaround
+# Database + Static Frontend Demo
+services:
+  # PostgreSQL Database with demo data
+  db:
+    image: postgres:15-alpine
+    container_name: ghosthub_demo_db
+    ports:
+      - "5432:5432"  # Expose for demo purposes
+    environment:
+      POSTGRES_DB: ghosthub
+      POSTGRES_USER: ghosthub
+      POSTGRES_PASSWORD: ghosthub
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/demo-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./scripts/demo-data.sql:/docker-entrypoint-initdb.d/02-data.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ghosthub"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: ghosthub_demo_redis
+    ports:
+      - "6379:6379"  # Expose for demo purposes
+    volumes:
+      - redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+
+  # Static Demo Frontend
+  web:
+    image: nginx:alpine
+    container_name: ghosthub_demo_web
+    ports:
+      - "8080:80"
+    volumes:
+      - ./demo-web:/usr/share/nginx/html:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:

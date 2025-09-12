@@ -1,0 +1,182 @@
+# Docker Compose v2 for GhostHub Demo
+version: '3.9'
+
+services:
+  # PostgreSQL Database with demo data
+  db:
+    image: postgres:15-alpine
+    container_name: ghosthub_demo_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ghosthub
+      POSTGRES_USER: ghosthub
+      POSTGRES_PASSWORD: ghosthub
+      # Performance settings for demo
+      POSTGRES_SHARED_BUFFERS: 128MB
+      POSTGRES_EFFECTIVE_CACHE_SIZE: 512MB
+      POSTGRES_WORK_MEM: 2MB
+      POSTGRES_MAINTENANCE_WORK_MEM: 32MB
+    volumes:
+      - postgres_demo_data:/var/lib/postgresql/data
+      - ./scripts/demo-init.sql:/docker-entrypoint-initdb.d/01-demo-init.sql:ro
+    ports:
+      - "127.0.0.1:5433:5432"  # Different port to avoid conflicts
+    networks:
+      - ghosthub-demo-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ghosthub -d ghosthub"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Redis for caching and sessions
+  redis:
+    image: redis:7-alpine
+    container_name: ghosthub_demo_redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
+    volumes:
+      - redis_demo_data:/data
+    ports:
+      - "127.0.0.1:6380:6379"  # Different port to avoid conflicts
+    networks:
+      - ghosthub-demo-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Main GhostHub application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.demo
+      args:
+        BUILDKIT_INLINE_CACHE: 1
+    container_name: ghosthub_demo_app
+    restart: unless-stopped
+    ports:
+      - "8080:80"    # HTTP
+      - "8443:443"   # HTTPS
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      # Database
+      DATABASE_URL: "postgresql://ghosthub:ghosthub@db:5432/ghosthub"
+      REDIS_URL: "redis://redis:6379"
+      
+      # Server configuration
+      SERVER_ADDR: "127.0.0.1:8080"
+      
+      # Security (CHANGE IN PRODUCTION!)
+      JWT_SECRET: "demo-jwt-secret-please-change-in-production"
+      INTEGRATION_ENCRYPTION_KEY: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      
+      # Demo settings
+      DEMO_MODE: "true"
+      RUST_LOG: "info,ghosthub_backend=debug"
+      RUST_BACKTRACE: "1"
+      
+      # Features
+      TOKIO_WORKER_THREADS: "2"
+      
+      # Email (demo SMTP - optional)
+      SMTP_HOST: "mailhog"
+      SMTP_PORT: "1025"
+      SMTP_USER: ""
+      SMTP_PASSWORD: ""
+      SMTP_FROM: "demo@ghosthub.local"
+      
+    networks:
+      - ghosthub-demo-network
+    volumes:
+      - app_demo_data:/app/data
+      - app_demo_logs:/var/log/supervisor
+      - app_demo_uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s  # Longer startup time for demo
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    # Security settings
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges:true
+
+  # MailHog for email testing (optional)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: ghosthub_demo_mailhog
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8025:8025"  # Web UI
+      - "127.0.0.1:1025:1025"  # SMTP
+    networks:
+      - ghosthub-demo-network
+    profiles:
+      - mail
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "2"
+
+  # Adminer for database management (optional)
+  adminer:
+    image: adminer:latest
+    container_name: ghosthub_demo_adminer
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8081:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    networks:
+      - ghosthub-demo-network
+    profiles:
+      - admin
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "2"
+
+networks:
+  ghosthub-demo-network:
+    name: ghosthub-demo
+    driver: bridge
+
+volumes:
+  postgres_demo_data:
+    name: ghosthub_demo_postgres_data
+  redis_demo_data:
+    name: ghosthub_demo_redis_data
+  app_demo_data:
+    name: ghosthub_demo_app_data
+  app_demo_logs:
+    name: ghosthub_demo_app_logs
+  app_demo_uploads:
+    name: ghosthub_demo_app_uploads

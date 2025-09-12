@@ -1,0 +1,46 @@
+# Quick Demo - Simplified Docker Compose for GhostHub
+# For testing and development - single command deployment
+version: '3.9'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: ghosthub
+      POSTGRES_USER: ghosthub
+      POSTGRES_PASSWORD: ghosthub
+    volumes:
+      - ghosthub_quick_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ghosthub"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - ghosthub_quick_redis:/data
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.demo
+    ports:
+      - "8080:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql://ghosthub:ghosthub@db:5432/ghosthub"
+      REDIS_URL: "redis://redis:6379"
+      JWT_SECRET: "demo-jwt-secret"
+      DEMO_MODE: "true"
+      RUST_LOG: "info"
+    volumes:
+      - ghosthub_quick_uploads:/app/uploads
+
+volumes:
+  ghosthub_quick_db:
+  ghosthub_quick_redis:
+  ghosthub_quick_uploads:

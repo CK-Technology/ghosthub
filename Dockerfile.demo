@@ -1,0 +1,104 @@
+# Multi-stage Docker build for GhostHub Demo
+FROM rust:1.75-slim as backend-builder
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    libpq-dev \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy backend source
+COPY backend/ ./backend/
+COPY shared/ ./shared/
+
+# Build backend
+WORKDIR /app/backend
+RUN cargo build --release
+
+# Frontend builder stage
+FROM rust:1.75-slim as frontend-builder
+
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    curl \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install trunk for building WebAssembly
+RUN cargo install --locked trunk
+RUN rustup target add wasm32-unknown-unknown
+
+WORKDIR /app
+
+# Copy frontend source
+COPY frontend/ ./frontend/
+COPY shared/ ./shared/
+
+# Build frontend
+WORKDIR /app/frontend
+RUN trunk build --release --dist ../dist
+
+# Final runtime stage
+FROM debian:bookworm-slim
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    libpq5 \
+    libssl3 \
+    curl \
+    nginx \
+    supervisor \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app user
+RUN useradd -m -u 1001 -s /bin/bash ghosthub
+
+WORKDIR /app
+
+# Copy built backend
+COPY --from=backend-builder /app/backend/target/release/ghosthub-backend ./ghosthub-backend
+RUN chmod +x ./ghosthub-backend
+
+# Copy built frontend
+COPY --from=frontend-builder /app/dist ./static
+
+# Copy migrations
+COPY backend/migrations ./migrations
+
+# Copy configuration files
+COPY docker/nginx-demo.conf /etc/nginx/sites-available/default
+COPY docker/supervisord-demo.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Copy demo initialization scripts
+COPY scripts/demo-init.sh ./demo-init.sh
+COPY scripts/demo-data.sql ./demo-data.sql
+RUN chmod +x ./demo-init.sh
+
+# Create necessary directories
+RUN mkdir -p /var/log/supervisor /app/data /app/uploads
+RUN chown -R ghosthub:ghosthub /app /var/log/supervisor
+
+# Environment variables
+ENV RUST_LOG=info
+ENV DATABASE_URL=postgresql://ghosthub:ghosthub@db:5432/ghosthub
+ENV REDIS_URL=redis://redis:6379
+ENV SERVER_ADDR=127.0.0.1:8080
+ENV JWT_SECRET=demo-jwt-secret-change-in-production
+ENV DEMO_MODE=true
+
+# Expose port
+EXPOSE 80 443
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost/health || exit 1
+
+# Start supervisor
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

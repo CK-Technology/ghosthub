@@ -98,14 +98,43 @@ pub struct PortalAsset {
     pub warranty_expire: Option<chrono::NaiveDate>,
 }
 
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct PortalTimeEntry {
+    pub id: Uuid,
+    pub date: chrono::NaiveDate,
+    pub duration: i32,
+    pub description: String,
+    pub billable: bool,
+    pub hourly_rate: Option<rust_decimal::Decimal>,
+    pub task_name: Option<String>,
+    pub project_name: Option<String>,
+    pub technician_name: String,
+    pub created_at: chrono::DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GuestLoginRequest {
+    pub token: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GuestLoginResponse {
+    pub access_token: String,
+    pub client: PortalClient,
+    pub expires_at: chrono::DateTime<Utc>,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PortalDashboard {
     pub open_tickets: i64,
     pub pending_invoices: i64,
     pub total_assets: i64,
     pub outstanding_balance: rust_decimal::Decimal,
+    pub monthly_hours: rust_decimal::Decimal,
+    pub billable_hours_mtd: rust_decimal::Decimal,
     pub recent_tickets: Vec<PortalTicket>,
     pub recent_invoices: Vec<PortalInvoice>,
+    pub recent_time_entries: Vec<PortalTimeEntry>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -139,6 +168,14 @@ pub fn portal_routes() -> Router<Arc<AppState>> {
         // Assets
         .route("/assets", get(list_portal_assets))
         .route("/assets/:id", get(get_portal_asset))
+        
+        // Time Tracking
+        .route("/time-entries", get(list_portal_time_entries))
+        
+        // Guest Access
+        .route("/guest/login", post(guest_login))
+        .route("/guest/tickets", get(list_guest_tickets))
+        .route("/guest/time-entries", get(list_guest_time_entries))
         
         // Profile
         .route("/profile", get(get_portal_profile).put(update_portal_profile))
@@ -309,21 +346,54 @@ async fn get_portal_dashboard(
     let token = extract_portal_token(&headers)?;
     let (_contact_id, client_id) = verify_token(&state, &token).await?;
     
-    // Get dashboard stats
-    let stats = sqlx::query!(
-        "SELECT 
-            (SELECT COUNT(*) FROM tickets WHERE client_id = $1 AND status IN ('open', 'in_progress')) as open_tickets,
-            (SELECT COUNT(*) FROM invoices WHERE client_id = $1 AND status != 'paid') as pending_invoices,
-            (SELECT COUNT(*) FROM assets WHERE client_id = $1 AND archived_at IS NULL) as total_assets,
-            (SELECT COALESCE(SUM(balance), 0) FROM invoices WHERE client_id = $1 AND status != 'paid') as outstanding_balance",
-        client_id
+    // Get dashboard stats with simpler queries
+    let open_tickets: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM tickets WHERE client_id = $1 AND status IN ('open', 'in_progress')"
     )
+    .bind(client_id)
     .fetch_one(&state.db_pool)
     .await
-    .map_err(|e| {
-        tracing::error!("Error fetching dashboard stats: {}", e);
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
+    .unwrap_or(0);
+    
+    let pending_invoices: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM invoices WHERE client_id = $1 AND status != 'paid'"
+    )
+    .bind(client_id)
+    .fetch_one(&state.db_pool)
+    .await
+    .unwrap_or(0);
+    
+    let total_assets: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM assets WHERE client_id = $1 AND archived_at IS NULL"
+    )
+    .bind(client_id)
+    .fetch_one(&state.db_pool)
+    .await
+    .unwrap_or(0);
+    
+    let outstanding_balance: rust_decimal::Decimal = sqlx::query_scalar(
+        "SELECT COALESCE(SUM(balance), 0) FROM invoices WHERE client_id = $1 AND status != 'paid'"
+    )
+    .bind(client_id)
+    .fetch_one(&state.db_pool)
+    .await
+    .unwrap_or_default();
+    
+    let monthly_hours: rust_decimal::Decimal = sqlx::query_scalar(
+        "SELECT COALESCE(SUM(duration), 0)::decimal / 60.0 FROM time_entries WHERE client_id = $1 AND date >= date_trunc('month', CURRENT_DATE)"
+    )
+    .bind(client_id)
+    .fetch_one(&state.db_pool)
+    .await
+    .unwrap_or_default();
+    
+    let billable_hours_mtd: rust_decimal::Decimal = sqlx::query_scalar(
+        "SELECT COALESCE(SUM(duration), 0)::decimal / 60.0 FROM time_entries WHERE client_id = $1 AND billable = true AND date >= date_trunc('month', CURRENT_DATE)"
+    )
+    .bind(client_id)
+    .fetch_one(&state.db_pool)
+    .await
+    .unwrap_or_default();
     
     // Get recent tickets
     let recent_tickets = sqlx::query_as::<_, PortalTicket>(
@@ -358,13 +428,37 @@ async fn get_portal_dashboard(
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
     
+    // Get recent time entries
+    let recent_time_entries = sqlx::query_as::<_, PortalTimeEntry>(
+        "SELECT te.id, te.date, te.duration, te.description, te.billable, te.hourly_rate,
+         t.name as task_name, p.name as project_name,
+         (u.first_name || ' ' || u.last_name) as technician_name, te.created_at
+         FROM time_entries te
+         LEFT JOIN tasks t ON te.task_id = t.id
+         LEFT JOIN projects p ON te.project_id = p.id
+         LEFT JOIN users u ON te.user_id = u.id
+         WHERE te.client_id = $1
+         ORDER BY te.date DESC, te.created_at DESC
+         LIMIT 10"
+    )
+    .bind(client_id)
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Error fetching recent time entries: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+    
     Ok(Json(PortalDashboard {
-        open_tickets: stats.open_tickets.unwrap_or(0),
-        pending_invoices: stats.pending_invoices.unwrap_or(0),
-        total_assets: stats.total_assets.unwrap_or(0),
-        outstanding_balance: stats.outstanding_balance.unwrap_or_default(),
+        open_tickets,
+        pending_invoices,
+        total_assets,
+        outstanding_balance,
+        monthly_hours,
+        billable_hours_mtd,
         recent_tickets,
         recent_invoices,
+        recent_time_entries,
     }))
 }
 
@@ -793,6 +887,160 @@ async fn change_portal_password(
     Ok(StatusCode::OK)
 }
 
+async fn list_portal_time_entries(
+    State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
+) -> Result<Json<Vec<PortalTimeEntry>>, StatusCode> {
+    let token = extract_portal_token(&headers)?;
+    let (_contact_id, client_id) = verify_token(&state, &token).await?;
+    
+    let time_entries = sqlx::query_as::<_, PortalTimeEntry>(
+        "SELECT te.id, te.date, te.duration, te.description, te.billable, te.hourly_rate,
+         t.name as task_name, p.name as project_name,
+         (u.first_name || ' ' || u.last_name) as technician_name, te.created_at
+         FROM time_entries te
+         LEFT JOIN tasks t ON te.task_id = t.id
+         LEFT JOIN projects p ON te.project_id = p.id
+         LEFT JOIN users u ON te.user_id = u.id
+         WHERE te.client_id = $1
+         ORDER BY te.date DESC, te.created_at DESC"
+    )
+    .bind(client_id)
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Error fetching time entries: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+    
+    Ok(Json(time_entries))
+}
+
+async fn guest_login(
+    State(state): State<Arc<AppState>>,
+    Json(payload): Json<GuestLoginRequest>,
+) -> Result<Json<GuestLoginResponse>, (StatusCode, Json<serde_json::Value>)> {
+    // Verify client portal token with simpler query
+    let client_token_result: Option<(Uuid, chrono::DateTime<Utc>)> = sqlx::query_as(
+        "SELECT client_id, expires_at FROM client_portal_tokens 
+         WHERE token = $1 AND expires_at > NOW() AND is_active = true"
+    )
+    .bind(&payload.token)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Error verifying client token: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": "Database error"}))
+        )
+    })?;
+    
+    let (client_id, _expires_at) = client_token_result.ok_or_else(|| {
+        (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({"error": "Invalid or expired guest token"}))
+        )
+    })?;
+    
+    // Get client information
+    let client = sqlx::query_as::<_, PortalClient>(
+        "SELECT id, name, email, phone FROM clients WHERE id = $1"
+    )
+    .bind(client_id)
+    .fetch_one(&state.db_pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Error fetching client: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": "Database error"}))
+        )
+    })?;
+    
+    // Generate guest access token
+    let access_token = Uuid::new_v4().to_string();
+    let expires_at = Utc::now() + Duration::hours(8); // Shorter session for guests
+    
+    sqlx::query(
+        "INSERT INTO guest_access_tokens (client_id, token, expires_at, created_from_portal_token)
+         VALUES ($1, $2, $3, $4)"
+    )
+    .bind(client_id)
+    .bind(&access_token)
+    .bind(expires_at)
+    .bind(&payload.token)
+    .execute(&state.db_pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Error creating guest access token: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": "Failed to create session"}))
+        )
+    })?;
+    
+    Ok(Json(GuestLoginResponse {
+        access_token,
+        client,
+        expires_at,
+    }))
+}
+
+async fn list_guest_tickets(
+    State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
+) -> Result<Json<Vec<PortalTicket>>, StatusCode> {
+    let token = extract_guest_token(&headers)?;
+    let client_id = verify_guest_token(&state, &token).await?;
+    
+    let tickets = sqlx::query_as::<_, PortalTicket>(
+        "SELECT id, number, subject, details, status, priority, created_at, updated_at,
+         (SELECT MAX(created_at) FROM ticket_replies WHERE ticket_id = tickets.id) as last_reply_at
+         FROM tickets 
+         WHERE client_id = $1
+         ORDER BY created_at DESC"
+    )
+    .bind(client_id)
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Error fetching guest tickets: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+    
+    Ok(Json(tickets))
+}
+
+async fn list_guest_time_entries(
+    State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
+) -> Result<Json<Vec<PortalTimeEntry>>, StatusCode> {
+    let token = extract_guest_token(&headers)?;
+    let client_id = verify_guest_token(&state, &token).await?;
+    
+    let time_entries = sqlx::query_as::<_, PortalTimeEntry>(
+        "SELECT te.id, te.date, te.duration, te.description, te.billable, te.hourly_rate,
+         t.name as task_name, p.name as project_name,
+         (u.first_name || ' ' || u.last_name) as technician_name, te.created_at
+         FROM time_entries te
+         LEFT JOIN tasks t ON te.task_id = t.id
+         LEFT JOIN projects p ON te.project_id = p.id
+         LEFT JOIN users u ON te.user_id = u.id
+         WHERE te.client_id = $1 AND te.billable = true
+         ORDER BY te.date DESC, te.created_at DESC"
+    )
+    .bind(client_id)
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Error fetching guest time entries: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+    
+    Ok(Json(time_entries))
+}
+
 // Helper functions
 fn extract_portal_token(headers: &HeaderMap) -> Result<String, StatusCode> {
     headers
@@ -828,6 +1076,43 @@ async fn verify_token(state: &Arc<AppState>, token: &str) -> Result<(Uuid, Uuid)
             .await;
             
             Ok((record.contact_id, record.client_id))
+        }
+        None => Err(StatusCode::UNAUTHORIZED),
+    }
+}
+
+fn extract_guest_token(headers: &HeaderMap) -> Result<String, StatusCode> {
+    headers
+        .get("X-Guest-Token")
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_string())
+        .ok_or(StatusCode::UNAUTHORIZED)
+}
+
+async fn verify_guest_token(state: &Arc<AppState>, token: &str) -> Result<Uuid, StatusCode> {
+    let result: Option<Uuid> = sqlx::query_scalar(
+        "SELECT client_id FROM guest_access_tokens 
+         WHERE token = $1 AND expires_at > NOW()"
+    )
+    .bind(token)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Error verifying guest token: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+    
+    match result {
+        Some(client_id) => {
+            // Update last used time
+            let _ = sqlx::query(
+                "UPDATE guest_access_tokens SET last_used_at = NOW() WHERE token = $1"
+            )
+            .bind(token)
+            .execute(&state.db_pool)
+            .await;
+            
+            Ok(client_id)
         }
         None => Err(StatusCode::UNAUTHORIZED),
     }

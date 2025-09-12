@@ -54,3 +54,19 @@ webpki-roots = "0.25"
 [dependencies.reqwest]
 version = "0.11"
 features = ["json", "multipart", "stream"]
+
+utoipa = { version = "4.2", features = ["axum_extras", "chrono", "uuid"] }
+utoipa-swagger-ui = { version = "6.0", features = ["axum"] }
+utoipa-rapidoc = { version = "3.0", features = ["axum"] }
+utoipa-redoc = { version = "3.0", features = ["axum"] }
+
+[dev-dependencies]
+tokio-test = "0.4"
+httptest = "0.15"
+mockall = "0.12"
+tempfile = "3.8"
+fake = { version = "2.9", features = ["derive", "chrono", "uuid"] }
+wiremock = "0.6"
+testcontainers = "0.15"
+testcontainers-modules = { version = "0.3", features = ["postgres"] }
+serial_test = "3.0"

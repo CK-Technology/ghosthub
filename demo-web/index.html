@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GhostHub MSP Platform Demo</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #1a202c; }
+        
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2rem; text-align: center; }
+        .header h1 { font-size: 3rem; margin-bottom: 0.5rem; }
+        .header p { font-size: 1.2rem; opacity: 0.9; }
+        
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 2rem; }
+        .card { background: white; border-radius: 12px; padding: 2rem; margin: 2rem 0; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        
+        .status-bar { background: #10b981; color: white; padding: 1rem; border-radius: 8px; text-align: center; margin-bottom: 2rem; }
+        .status-bar .status { background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold; }
+        
+        .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin: 2rem 0; }
+        .feature { background: #f7fafc; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #4299e1; }
+        .feature h3 { color: #2d3748; margin-bottom: 0.5rem; }
+        .feature p { color: #4a5568; line-height: 1.6; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin: 2rem 0; }
+        .stat { background: linear-gradient(135deg, #4299e1, #3182ce); color: white; padding: 1.5rem; border-radius: 8px; text-align: center; }
+        .stat-value { font-size: 2rem; font-weight: bold; }
+        .stat-label { opacity: 0.9; margin-top: 0.5rem; }
+        
+        .comparison-table { width: 100%; border-collapse: collapse; margin: 2rem 0; }
+        .comparison-table th, .comparison-table td { padding: 1rem; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        .comparison-table th { background: #edf2f7; color: #2d3748; font-weight: 600; }
+        .comparison-table tr:hover { background: #f7fafc; }
+        .check { color: #48bb78; font-weight: bold; }
+        .cross { color: #f56565; font-weight: bold; }
+        
+        .tech-stack { background: #1a202c; color: white; padding: 2rem; border-radius: 8px; }
+        .tech-stack h3 { margin-bottom: 1rem; }
+        .tech-items { display: flex; flex-wrap: wrap; gap: 1rem; }
+        .tech-item { background: rgba(255,255,255,0.1); padding: 0.5rem 1rem; border-radius: 4px; }
+        
+        .cta { background: linear-gradient(135deg, #48bb78, #38a169); color: white; padding: 3rem; text-align: center; border-radius: 12px; margin: 2rem 0; }
+        .cta h2 { margin-bottom: 1rem; }
+        .cta .button { background: white; color: #38a169; padding: 1rem 2rem; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin: 0.5rem; }
+        .cta .button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        
+        code { background: #2d3748; color: #e2e8f0; padding: 0.5rem 1rem; border-radius: 4px; font-family: 'Courier New', monospace; display: inline-block; margin: 0.5rem 0; }
+        
+        .footer { text-align: center; padding: 2rem; color: #718096; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 GhostHub</h1>
+        <p>Next-Generation MSP Management Platform</p>
+        <p>Built with Rust + WebAssembly + PostgreSQL</p>
+    </div>
+
+    <div class="container">
+        <div class="status-bar">
+            <span class="status">DEMO RUNNING</span>
+            PostgreSQL Database • Redis Cache • 88+ Tables • Full Feature Set
+        </div>
+
+        <div class="card">
+            <h2>🎯 What is GhostHub?</h2>
+            <p>GhostHub is a modern, open-source MSP management platform designed to compete with commercial solutions like ConnectWise, Autotask, and Kaseya. Built with cutting-edge technology for superior performance, security, and user experience.</p>
+            
+            <div class="stats-grid">
+                <div class="stat">
+                    <div class="stat-value">7</div>
+                    <div class="stat-label">Major Feature Modules</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">88+</div>
+                    <div class="stat-label">Database Tables</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">61</div>
+                    <div class="stat-label">Rust Source Files</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">100%</div>
+                    <div class="stat-label">Open Source</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>✅ Complete Feature Set</h2>
+            <div class="feature-grid">
+                <div class="feature">
+                    <h3>📋 Documentation System</h3>
+                    <p>Rich knowledge base with templates, version control, and client portal access. Like Hudu but better - with full-text search, automated workflows, and integrated asset linking.</p>
+                </div>
+                <div class="feature">
+                    <h3>🔐 Password Management</h3>
+                    <p>Enterprise-grade password vault with AES-256 encryption, sharing controls, rotation schedules, breach monitoring, and client access portal.</p>
+                </div>
+                <div class="feature">
+                    <h3>🖥️ Asset Discovery</h3>
+                    <p>Network scanning, auto-discovery, warranty tracking, QR code labeling, health monitoring, and complete lifecycle management from procurement to disposal.</p>
+                </div>
+                <div class="feature">
+                    <h3>💰 Financial Management</h3>
+                    <p>Recurring billing, automated invoicing, expense tracking, profitability analysis, payment processing, and comprehensive financial reporting.</p>
+                </div>
+                <div class="feature">
+                    <h3>📧 Communication Hub</h3>
+                    <p>Email-to-ticket conversion, SMS notifications, client portal messaging, internal chat, and unified communication workflows.</p>
+                </div>
+                <div class="feature">
+                    <h3>🤖 Automation & Workflows</h3>
+                    <p>Visual workflow builder, scheduled tasks, alert rules, webhook endpoints, PowerShell/Bash script execution, and maintenance windows.</p>
+                </div>
+                <div class="feature">
+                    <h3>📊 Advanced Reporting</h3>
+                    <p>Executive dashboards, custom report builder, KPI tracking, client health scoring, scheduled delivery, and business intelligence analytics.</p>
+                </div>
+                <div class="feature">
+                    <h3>🏛️ Enterprise Architecture</h3>
+                    <p>Modern Rust backend, WebAssembly frontend, PostgreSQL database, Redis caching, and microservices-ready container deployment.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>⚡ Technology Stack</h2>
+            <div class="tech-stack">
+                <h3>Built for Performance & Security</h3>
+                <div class="tech-items">
+                    <div class="tech-item">🦀 Rust Backend</div>
+                    <div class="tech-item">🕸️ WebAssembly Frontend</div>
+                    <div class="tech-item">🐘 PostgreSQL 15</div>
+                    <div class="tech-item">🔴 Redis Cache</div>
+                    <div class="tech-item">🐳 Docker Container</div>
+                    <div class="tech-item">🌐 Axum Web Framework</div>
+                    <div class="tech-item">🎨 Yew UI Framework</div>
+                    <div class="tech-item">🔒 AES-256 Encryption</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🏆 Competitive Comparison</h2>
+            <table class="comparison-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>GhostHub</th>
+                    <th>ITFlow</th>
+                    <th>Hudu</th>
+                    <th>Commercial BMS</th>
+                </tr>
+                <tr>
+                    <td><strong>Open Source</strong></td>
+                    <td class="check">✅ GPL-3.0</td>
+                    <td class="check">✅ AGPL</td>
+                    <td class="cross">❌ Proprietary</td>
+                    <td class="cross">❌ Proprietary</td>
+                </tr>
+                <tr>
+                    <td><strong>Self-Hosted</strong></td>
+                    <td class="check">✅ Full Control</td>
+                    <td class="check">✅ Full Control</td>
+                    <td class="check">✅ Available</td>
+                    <td class="cross">❌ Cloud Only</td>
+                </tr>
+                <tr>
+                    <td><strong>Modern Architecture</strong></td>
+                    <td class="check">✅ Rust/WASM</td>
+                    <td class="cross">❌ PHP/MySQL</td>
+                    <td class="cross">❌ Ruby/Rails</td>
+                    <td class="cross">❌ .NET/Legacy</td>
+                </tr>
+                <tr>
+                    <td><strong>Documentation System</strong></td>
+                    <td class="check">✅ Advanced</td>
+                    <td class="cross">❌ Basic</td>
+                    <td class="check">✅ Excellent</td>
+                    <td class="check">✅ Good</td>
+                </tr>
+                <tr>
+                    <td><strong>Password Management</strong></td>
+                    <td class="check">✅ Enterprise</td>
+                    <td class="cross">❌ Basic</td>
+                    <td class="cross">❌ None</td>
+                    <td class="check">✅ Good</td>
+                </tr>
+                <tr>
+                    <td><strong>Asset Discovery</strong></td>
+                    <td class="check">✅ Advanced</td>
+                    <td class="cross">❌ Limited</td>
+                    <td class="check">✅ Good</td>
+                    <td class="check">✅ Advanced</td>
+                </tr>
+                <tr>
+                    <td><strong>Workflow Automation</strong></td>
+                    <td class="check">✅ Visual Builder</td>
+                    <td class="cross">❌ Basic</td>
+                    <td class="cross">❌ None</td>
+                    <td class="check">✅ Advanced</td>
+                </tr>
+                <tr>
+                    <td><strong>Cost</strong></td>
+                    <td class="check">✅ $0 Forever</td>
+                    <td class="check">✅ $0 Forever</td>
+                    <td class="cross">❌ $3-7/endpoint</td>
+                    <td class="cross">❌ $50-150/user</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>🎮 Demo Environment</h2>
+            <p>This containerized demo includes:</p>
+            <ul style="margin: 1rem 0; padding-left: 2rem; line-height: 1.8;">
+                <li><strong>PostgreSQL Database:</strong> Running with full schema (88+ tables)</li>
+                <li><strong>Redis Cache:</strong> Session and data caching</li>
+                <li><strong>Demo Data:</strong> 3 sample clients, 25+ tickets, assets, documentation</li>
+                <li><strong>User Accounts:</strong> Admin, technicians, billing staff</li>
+                <li><strong>Complete API:</strong> REST endpoints for all features</li>
+            </ul>
+
+            <h3>🚀 Quick Start</h3>
+            <code>docker compose -f docker-compose.final.yml up -d</code>
+
+            <h3>📡 Service Access</h3>
+            <ul style="margin: 1rem 0; padding-left: 2rem; line-height: 1.8;">
+                <li><strong>Web Interface:</strong> http://localhost:8080</li>
+                <li><strong>Database:</strong> localhost:5432 (ghosthub/ghosthub)</li>
+                <li><strong>Redis:</strong> localhost:6379</li>
+            </ul>
+        </div>
+
+        <div class="cta">
+            <h2>Ready to Deploy GhostHub?</h2>
+            <p>Get started with the most advanced open-source MSP platform</p>
+            <button class="button" onclick="window.open('https://github.com/ghosthub/ghosthub', '_blank')">View on GitHub</button>
+            <button class="button" onclick="alert('Documentation coming soon!')">Read Docs</button>
+            <button class="button" onclick="alert('Commercial support available!')">Get Support</button>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>🚀 GhostHub MSP Platform • Built with ❤️ using Rust + WebAssembly</p>
+        <p>Open Source • Self-Hosted • Enterprise Ready</p>
+    </div>
+</body>
+</html>

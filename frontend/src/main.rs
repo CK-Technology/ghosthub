@@ -7,7 +7,7 @@ mod services;
 mod utils;
 
 use components::{layout::Layout, auth::{AuthProvider, LoginForm, AuthContext}};
-use pages::{clients::ClientsPage, dashboard::DashboardPage, tickets::TicketsPage, time_tracking::TimeTrackingPage};
+use pages::{clients::ClientsPage, dashboard::DashboardPage, tickets::TicketsPage, time_tracking::TimeTrackingPage, m365::M365Page, azure::AzurePage, bitwarden::BitwardenPage, network::NetworkPage};
 
 #[derive(Clone, Routable, PartialEq)]
 enum Route {
@@ -27,6 +27,14 @@ enum Route {
     Invoices,
     #[at("/projects")]
     Projects,
+    #[at("/m365")]
+    M365,
+    #[at("/azure")]
+    Azure,
+    #[at("/bitwarden")]
+    Bitwarden,
+    #[at("/network")]
+    Network,
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -42,6 +50,10 @@ fn switch(routes: Route) -> Html {
         Route::Assets => html! { <div class="p-6"><h1 class="text-2xl font-bold">{"Assets"}</h1><p>{"Asset management coming soon..."}</p></div> },
         Route::Invoices => html! { <div class="p-6"><h1 class="text-2xl font-bold">{"Invoices"}</h1><p>{"Invoice management coming soon..."}</p></div> },
         Route::Projects => html! { <div class="p-6"><h1 class="text-2xl font-bold">{"Projects"}</h1><p>{"Project management coming soon..."}</p></div> },
+        Route::M365 => html! { <M365Page /> },
+        Route::Azure => html! { <AzurePage /> },
+        Route::Bitwarden => html! { <BitwardenPage /> },
+        Route::Network => html! { <NetworkPage /> },
         Route::NotFound => html! { 
             <div class="min-h-screen flex items-center justify-center">
                 <div class="text-center">
