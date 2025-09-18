@@ -1,6 +1,10 @@
+<div align="center">
+<img src="assets/ghosthub-logo.png" alt="GhostHub Logo" width="200">
+
 # GhostHub
 
 **Self-Hosted MSP Management Platform - Built with Rust + WebAssembly**
+</div>
 
 ![rust](https://img.shields.io/badge/Backend-Rust-orange?logo=rust)
 ![wasm](https://img.shields.io/badge/Frontend-WebAssembly-654ff0?logo=webassembly)
@@ -32,7 +36,7 @@
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/ghosthub.git
+git clone https://github.com/CK-Technology/ghosthub.git
 cd ghosthub
 ```
 
